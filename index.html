@@ -1,0 +1,973 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VCR Calculator</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #172033;
+      --muted: #5b667a;
+      --line: #d7dde8;
+      --panel: #ffffff;
+      --soft: #f5f7fb;
+      --mint: #c7eed1;
+      --peach: #f7ded1;
+      --navy: #0e3474;
+      --navy-2: #123f88;
+      --accent: #23846f;
+      --warn: #ad5f11;
+      --shadow: 0 12px 32px rgba(23, 32, 51, 0.12);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        linear-gradient(180deg, rgba(199, 238, 209, 0.58), rgba(245, 247, 251, 0) 260px),
+        var(--soft);
+      color: var(--ink);
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    .app {
+      width: min(1180px, calc(100vw - 32px));
+      margin: 0 auto;
+      padding: 28px 0 36px;
+    }
+
+    header {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 20px;
+      align-items: end;
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(28px, 4vw, 46px);
+      line-height: 1.06;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 16px;
+      max-width: 680px;
+    }
+
+    .badge {
+      border: 1px solid rgba(14, 52, 116, 0.18);
+      background: #fff;
+      border-radius: 8px;
+      padding: 10px 12px;
+      color: var(--navy);
+      font-weight: 700;
+      box-shadow: 0 4px 18px rgba(23, 32, 51, 0.06);
+      white-space: nowrap;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: 360px minmax(0, 1fr);
+      gap: 16px;
+      align-items: start;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
+
+    .controls {
+      padding: 18px;
+      position: sticky;
+      top: 16px;
+    }
+
+    .group {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    label {
+      font-size: 13px;
+      font-weight: 800;
+      color: #273249;
+    }
+
+    .segmented {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #edf1f7;
+    }
+
+    .segmented button {
+      border: 0;
+      background: transparent;
+      min-height: 44px;
+      cursor: pointer;
+      color: var(--muted);
+      font-weight: 800;
+    }
+
+    .segmented button.active {
+      background: var(--navy);
+      color: #fff;
+    }
+
+    .segmented.three {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .input-panel {
+      display: none;
+    }
+
+    .input-panel.active {
+      display: grid;
+    }
+
+    .input-wrap {
+      position: relative;
+    }
+
+    input[type="number"],
+    input[type="text"] {
+      width: 100%;
+      min-height: 52px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px 88px 10px 14px;
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--ink);
+      background: #fff;
+    }
+
+    .unit {
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      font-weight: 800;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .quick-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    .quick-grid button {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      min-height: 38px;
+      cursor: pointer;
+      color: #243047;
+      font-weight: 800;
+    }
+
+    .quick-grid button:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .copy-box {
+      display: grid;
+      gap: 8px;
+      padding-top: 4px;
+    }
+
+    .copy-button {
+      border: 0;
+      border-radius: 8px;
+      background: var(--accent);
+      color: #fff;
+      min-height: 46px;
+      cursor: pointer;
+      font-weight: 900;
+      box-shadow: 0 8px 18px rgba(35, 132, 111, 0.22);
+    }
+
+    .copy-button:hover {
+      background: #1d715f;
+    }
+
+    .copy-status {
+      min-height: 18px;
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .results {
+      display: grid;
+      gap: 16px;
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1px;
+      overflow: hidden;
+    }
+
+    .metric {
+      background: #fff;
+      min-height: 118px;
+      padding: 18px;
+      display: grid;
+      align-content: center;
+      gap: 6px;
+    }
+
+    .metric span {
+      color: var(--muted);
+      font-weight: 800;
+      font-size: 13px;
+    }
+
+    .metric strong {
+      font-size: clamp(28px, 4vw, 42px);
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .metric small {
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .table-panel {
+      overflow: hidden;
+    }
+
+    .section-title {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(90deg, var(--mint), #e7f7ec);
+      font-weight: 900;
+    }
+
+    .section-title small {
+      color: #2d4f42;
+      font-weight: 800;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      background: #fff;
+    }
+
+    th,
+    td {
+      border-bottom: 1px solid var(--line);
+      padding: 12px 10px;
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    th {
+      background: var(--peach);
+      font-size: 13px;
+      color: #172033;
+    }
+
+    th.zone {
+      background: var(--navy);
+      color: #fff;
+    }
+
+    th.zone span {
+      display: block;
+      margin-top: 2px;
+      color: rgba(255, 255, 255, 0.78);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    td {
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    td .label {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .zone-row td:first-child {
+      text-align: left;
+      color: #26324a;
+      width: 30%;
+    }
+
+    .hr-table {
+      border-top: 1px solid var(--line);
+      padding: 0;
+      background: #fff;
+    }
+
+    .hr-title {
+      margin: 0;
+      padding: 14px 16px 10px;
+      color: #26324a;
+      font-weight: 900;
+    }
+
+    .hr-grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      border-top: 1px solid var(--line);
+      overflow: hidden;
+    }
+
+    .hr-cell {
+      min-height: 58px;
+      display: grid;
+      place-items: center;
+      gap: 2px;
+      padding: 8px;
+      text-align: center;
+      border-right: 1px solid var(--line);
+      background: #fbfcfe;
+      font-weight: 900;
+    }
+
+    .hr-cell:last-child {
+      border-right: 0;
+    }
+
+    .hr-cell span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .hr-label {
+      justify-items: start;
+      color: #26324a;
+      background: #fff;
+    }
+
+    .formula {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      padding: 16px;
+      background: #fff;
+    }
+
+    .formula div {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: #fbfcfe;
+    }
+
+    .formula strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .warning {
+      display: none;
+      margin-top: 10px;
+      border: 1px solid rgba(173, 95, 17, 0.28);
+      border-radius: 8px;
+      background: #fff8ef;
+      color: var(--warn);
+      padding: 10px;
+      font-size: 13px;
+      font-weight: 800;
+      line-height: 1.45;
+    }
+
+    .warning.show {
+      display: block;
+    }
+
+    @media (max-width: 860px) {
+      header,
+      .workspace {
+        grid-template-columns: 1fr;
+      }
+
+      .controls {
+        position: static;
+      }
+
+      .summary,
+      .formula {
+        grid-template-columns: 1fr;
+      }
+
+      .table-scroll {
+        overflow-x: auto;
+      }
+
+      table {
+        min-width: 820px;
+      }
+
+      .hr-grid {
+        min-width: 820px;
+      }
+
+      .hr-table {
+        overflow-x: auto;
+      }
+
+      .badge {
+        width: max-content;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header>
+      <div>
+        <h1>VCR Calculator</h1>
+        <p class="subtitle">คำนวณ Velocity at Critical Rate จากผลทดสอบ 30 หรือ 60 นาที พร้อม pace สำหรับ endurance, tempo และ extensive interval ตามตารางอ้างอิง</p>
+      </div>
+      <div class="badge">ระยะทางเป็นเมตร</div>
+    </header>
+
+    <section class="workspace" aria-label="VCR calculator">
+      <aside class="panel controls">
+        <div class="group">
+          <label>เลือกวิธีใส่ข้อมูล</label>
+          <div class="segmented three" role="tablist" aria-label="Input mode">
+            <button id="modeDistance" class="active" type="button" aria-pressed="true">Test</button>
+            <button id="modeVcr" type="button" aria-pressed="false">VCR</button>
+            <button id="modePace" type="button" aria-pressed="false">Pace</button>
+          </div>
+        </div>
+
+        <div class="group input-panel active" id="distancePanel">
+          <label>เลือกประเภทการทดสอบ</label>
+          <div class="segmented" role="tablist" aria-label="Test duration">
+            <button id="test30" class="active" type="button" aria-pressed="true">30 นาที</button>
+            <button id="test60" type="button" aria-pressed="false">60 นาที</button>
+          </div>
+        </div>
+
+        <div class="group input-panel active" id="distanceInputPanel">
+          <label for="distance">ระยะที่ทำได้</label>
+          <div class="input-wrap">
+            <input id="distance" type="number" min="1" step="10" value="5400" inputmode="numeric">
+            <span class="unit">m</span>
+          </div>
+          <input id="distanceRange" type="range" min="3000" max="12000" step="10" value="5400">
+          <div class="hint" id="rangeHint">ช่วงจากตาราง 30 นาที: 4500-9000 m</div>
+          <div id="warning" class="warning">ค่านี้อยู่นอกช่วงตารางอ้างอิง แต่ยังคำนวณจากสูตรเดียวกันได้</div>
+        </div>
+
+        <div class="group input-panel" id="vcrInputPanel">
+          <label for="vcrInput">VCR</label>
+          <div class="input-wrap">
+            <input id="vcrInput" type="number" min="0.1" step="0.01" value="2.80" inputmode="decimal">
+            <span class="unit">m/sec</span>
+          </div>
+          <div class="hint">ใส่ค่า VCR โดยตรง ระบบจะคำนวณ pace และ zones ให้ทันที</div>
+        </div>
+
+        <div class="group input-panel" id="paceInputPanel">
+          <label for="paceInput">Time per km</label>
+          <div class="input-wrap">
+            <input id="paceInput" type="text" value="5:57" inputmode="numeric" placeholder="เช่น 5:57">
+            <span class="unit">min/km</span>
+          </div>
+          <div class="hint">ใส่เป็นนาที:วินาที เช่น 6:40 หรือใส่นาทีแบบทศนิยม เช่น 6.67</div>
+        </div>
+
+        <div class="group input-panel active" id="quickValuesPanel">
+          <label>ค่าตัวอย่างจากตาราง</label>
+          <div class="quick-grid" id="quickValues"></div>
+        </div>
+
+        <div class="group copy-box">
+          <label>ส่งค่าต่อให้ ChatGPT</label>
+          <button class="copy-button" id="copyButton" type="button">Copy training values</button>
+          <div class="copy-status" id="copyStatus" aria-live="polite"></div>
+        </div>
+      </aside>
+
+      <section class="results">
+        <div class="panel summary" aria-label="Main result">
+          <div class="metric">
+            <span>VCR</span>
+            <strong id="vcrValue">2.80</strong>
+            <small>m/sec</small>
+          </div>
+          <div class="metric">
+            <span>Time per km</span>
+            <strong id="paceValue">5:57</strong>
+            <small>min / 1 km</small>
+          </div>
+          <div class="metric">
+            <span>เทียบผลทดสอบ</span>
+            <strong id="equivalentValue">10080</strong>
+            <small id="equivalentLabel">m ใน 60 นาที</small>
+          </div>
+        </div>
+
+        <div class="panel table-panel">
+          <div class="section-title">
+            <span>Training Method</span>
+            <small id="sourceLine">คำนวณจาก 5400 m / 30 นาที</small>
+          </div>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>ประเภท</th>
+                  <th class="zone">70%<span>Z1</span></th>
+                  <th class="zone">85%<span>Z2</span></th>
+                  <th class="zone">90%<span>Z3 MP</span></th>
+                  <th class="zone">95%<span>HMP</span></th>
+                  <th class="zone">97%<span>Z4</span></th>
+                  <th class="zone">&gt;100%<span>Z5</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="zone-row">
+                  <td>Run for regeneration</td>
+                  <td id="pace70">8:30<span class="label">min/km</span></td>
+                  <td colspan="5"></td>
+                </tr>
+                <tr class="zone-row">
+                  <td>30-60 min endurance / tempo run</td>
+                  <td></td>
+                  <td id="pace85">7:00<span class="label">min/km</span></td>
+                  <td id="pace90">6:36<span class="label">min/km</span></td>
+                  <td id="pace95">6:15<span class="label">min/km</span></td>
+                  <td id="pace97">6:08<span class="label">min/km</span></td>
+                  <td></td>
+                </tr>
+                <tr class="zone-row">
+                  <td>Extensive interval</td>
+                  <td colspan="5"></td>
+                  <td id="paceOver">5:37 - 5:47<span class="label">min/km</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="hr-table">
+            <div class="hr-title">Heart Rate Reference</div>
+            <div class="hr-grid" aria-label="Heart rate by training zone">
+              <div class="hr-cell hr-label">Heart Rate<span>bpm</span></div>
+              <div class="hr-cell">120-130<span>70% Z1</span></div>
+              <div class="hr-cell">140-150<span>85% Z2</span></div>
+              <div class="hr-cell">150-160<span>90% Z3 MP</span></div>
+              <div class="hr-cell">ยังไม่ระบุ<span>95% HMP</span></div>
+              <div class="hr-cell">168-170<span>97% Z4</span></div>
+              <div class="hr-cell">180-190<span>&gt;100% Z5</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="section-title">
+            <span>Formula</span>
+            <small>30 นาทีแปลงเป็น 60 นาทีด้วย -0.2</small>
+          </div>
+          <div class="formula">
+            <div>
+              <strong>VCR</strong>
+              <span id="formulaVcr">30 นาที: (5400 ÷ 1800) - 0.2 = 2.80 m/sec</span>
+            </div>
+            <div>
+              <strong>Pace</strong>
+              <span>Pace = 1000 ÷ VCR, แล้วแปลงเป็น min/km</span>
+            </div>
+            <div>
+              <strong>Training zone</strong>
+              <span>Pace zone = 1000 ÷ (VCR × เปอร์เซ็นต์)</span>
+            </div>
+            <div>
+              <strong>&gt;100%</strong>
+              <span>ใช้ช่วงเร็วกว่า VCR pace ประมาณ 10-20 วินาที/กม.</span>
+            </div>
+          </div>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    const state = {
+      inputMode: "distance",
+      minutes: 30,
+      distance: 5400,
+      directVcr: 2.8,
+      paceText: "5:57",
+      latestResult: null
+    };
+
+    const refs = {
+      modeDistance: document.querySelector("#modeDistance"),
+      modeVcr: document.querySelector("#modeVcr"),
+      modePace: document.querySelector("#modePace"),
+      distancePanel: document.querySelector("#distancePanel"),
+      distanceInputPanel: document.querySelector("#distanceInputPanel"),
+      vcrInputPanel: document.querySelector("#vcrInputPanel"),
+      paceInputPanel: document.querySelector("#paceInputPanel"),
+      quickValuesPanel: document.querySelector("#quickValuesPanel"),
+      test30: document.querySelector("#test30"),
+      test60: document.querySelector("#test60"),
+      distance: document.querySelector("#distance"),
+      distanceRange: document.querySelector("#distanceRange"),
+      vcrInput: document.querySelector("#vcrInput"),
+      paceInput: document.querySelector("#paceInput"),
+      rangeHint: document.querySelector("#rangeHint"),
+      warning: document.querySelector("#warning"),
+      quickValues: document.querySelector("#quickValues"),
+      copyButton: document.querySelector("#copyButton"),
+      copyStatus: document.querySelector("#copyStatus"),
+      vcrValue: document.querySelector("#vcrValue"),
+      paceValue: document.querySelector("#paceValue"),
+      equivalentValue: document.querySelector("#equivalentValue"),
+      equivalentLabel: document.querySelector("#equivalentLabel"),
+      sourceLine: document.querySelector("#sourceLine"),
+      formulaVcr: document.querySelector("#formulaVcr"),
+      pace70: document.querySelector("#pace70"),
+      pace85: document.querySelector("#pace85"),
+      pace90: document.querySelector("#pace90"),
+      pace95: document.querySelector("#pace95"),
+      pace97: document.querySelector("#pace97"),
+      paceOver: document.querySelector("#paceOver")
+    };
+
+    const presets = {
+      30: [4500, 5400, 6300, 7200, 8100, 9000],
+      60: [9000, 10800, 12600, 14400, 16200, 18000]
+    };
+
+    const ranges = {
+      30: { min: 4500, max: 9000, sliderMin: 3000, sliderMax: 12000 },
+      60: { min: 9000, max: 18000, sliderMin: 6000, sliderMax: 24000 }
+    };
+
+    function secondsToPace(seconds) {
+      const floored = Math.max(0, Math.floor(seconds + 1e-9));
+      const min = Math.floor(floored / 60);
+      const sec = String(floored % 60).padStart(2, "0");
+      return `${min}:${sec}`;
+    }
+
+    function parsePaceToSeconds(value) {
+      const text = String(value).trim();
+      if (!text) {
+        return 0;
+      }
+
+      if (text.includes(":")) {
+        const [minutesText, secondsText = "0"] = text.split(":");
+        const minutes = Number(minutesText);
+        const seconds = Number(secondsText);
+        if (!Number.isFinite(minutes) || !Number.isFinite(seconds)) {
+          return 0;
+        }
+        return (minutes * 60) + seconds;
+      }
+
+      const decimalMinutes = Number(text);
+      return Number.isFinite(decimalMinutes) ? decimalMinutes * 60 : 0;
+    }
+
+    function paceFromVelocity(velocity) {
+      return secondsToPace(1000 / velocity);
+    }
+
+    function paceCell(value) {
+      return `${value}<span class="label">min/km</span>`;
+    }
+
+    function zoneResult(label, percent, pace, method, heartRate) {
+      return { label, percent, pace, method, heartRate };
+    }
+
+    function vcrFromTest(rawVelocity) {
+      if (state.minutes === 30) {
+        return Math.max(0, rawVelocity - 0.2);
+      }
+      return rawVelocity;
+    }
+
+    function equivalentDistanceFromVcr(vcr) {
+      if (state.minutes === 30) {
+        return Math.round(vcr * 60 * 60);
+      }
+      return Math.round((vcr + 0.2) * 30 * 60);
+    }
+
+    function estimateDistanceForMinutes(vcr, minutes) {
+      if (minutes === 30) {
+        return Math.round((vcr + 0.2) * 30 * 60);
+      }
+      return Math.round(vcr * 60 * 60);
+    }
+
+    function buildCopyText() {
+      if (!state.latestResult) {
+        return "";
+      }
+
+      const result = state.latestResult;
+      const lines = [
+        "ช่วยคำนวณโปรแกรมซ้อมวิ่งจากค่า VCR และ training zones นี้",
+        "",
+        `Input: ${result.input}`,
+        `VCR สำหรับใช้คำนวณโซน: ${result.vcr} m/sec`,
+        `Time per km: ${result.basePace} min/km`,
+        `Estimated test: ${result.estimate30} m / 30 นาที, ${result.estimate60} m / 60 นาที`,
+        "",
+        "Training zones:",
+        ...result.zones.map((zone) => `${zone.percent} (${zone.label}): ${zone.pace} min/km, HR ${zone.heartRate} - ${zone.method}`),
+        "",
+        "ต้องการให้ช่วยทำโปรแกรมซ้อมโดยใช้ pace zones ด้านบน"
+      ];
+
+      return lines.join("\n");
+    }
+
+    async function copyTrainingValues() {
+      const text = buildCopyText();
+      if (!text) {
+        return;
+      }
+
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(text);
+        } else {
+          const textarea = document.createElement("textarea");
+          textarea.value = text;
+          textarea.setAttribute("readonly", "");
+          textarea.style.position = "fixed";
+          textarea.style.top = "-9999px";
+          document.body.appendChild(textarea);
+          textarea.select();
+          document.execCommand("copy");
+          document.body.removeChild(textarea);
+        }
+
+        refs.copyStatus.textContent = "Copied แล้ว";
+        window.setTimeout(() => {
+          refs.copyStatus.textContent = "";
+        }, 2200);
+      } catch (error) {
+        refs.copyStatus.textContent = "Copy ไม่สำเร็จ ลองเปิดผ่าน browser อีกครั้ง";
+      }
+    }
+
+    function setInputMode(inputMode) {
+      if (state.latestResult && inputMode === "vcr") {
+        refs.vcrInput.value = state.latestResult.vcr;
+      }
+
+      if (state.latestResult && inputMode === "pace") {
+        refs.paceInput.value = state.latestResult.basePace;
+      }
+
+      state.inputMode = inputMode;
+      refs.modeDistance.classList.toggle("active", inputMode === "distance");
+      refs.modeVcr.classList.toggle("active", inputMode === "vcr");
+      refs.modePace.classList.toggle("active", inputMode === "pace");
+      refs.modeDistance.setAttribute("aria-pressed", String(inputMode === "distance"));
+      refs.modeVcr.setAttribute("aria-pressed", String(inputMode === "vcr"));
+      refs.modePace.setAttribute("aria-pressed", String(inputMode === "pace"));
+
+      refs.distancePanel.classList.toggle("active", inputMode === "distance");
+      refs.distanceInputPanel.classList.toggle("active", inputMode === "distance");
+      refs.quickValuesPanel.classList.toggle("active", inputMode === "distance");
+      refs.vcrInputPanel.classList.toggle("active", inputMode === "vcr");
+      refs.paceInputPanel.classList.toggle("active", inputMode === "pace");
+
+      calculate();
+    }
+
+    function setDuration(minutes) {
+      state.minutes = minutes;
+      const config = ranges[minutes];
+      refs.distanceRange.min = config.sliderMin;
+      refs.distanceRange.max = config.sliderMax;
+      refs.rangeHint.textContent = `ช่วงจากตาราง ${minutes} นาที: ${config.min}-${config.max} m`;
+      refs.test30.classList.toggle("active", minutes === 30);
+      refs.test60.classList.toggle("active", minutes === 60);
+      refs.test30.setAttribute("aria-pressed", String(minutes === 30));
+      refs.test60.setAttribute("aria-pressed", String(minutes === 60));
+      renderQuickValues();
+      calculate();
+    }
+
+    function renderQuickValues() {
+      refs.quickValues.innerHTML = "";
+      presets[state.minutes].forEach((value) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = value.toLocaleString("en-US");
+        button.addEventListener("click", () => {
+          state.distance = value;
+          refs.distance.value = value;
+          refs.distanceRange.value = value;
+          calculate();
+        });
+        refs.quickValues.appendChild(button);
+      });
+    }
+
+    function calculate() {
+      let rawVelocity = 0;
+      let vcr = 0;
+      let inputText = "";
+      let formulaText = "";
+      let outOfReference = false;
+
+      if (state.inputMode === "distance") {
+        const distance = Number(refs.distance.value);
+        state.distance = Number.isFinite(distance) && distance > 0 ? distance : 0;
+        refs.distanceRange.value = state.distance;
+
+        const seconds = state.minutes * 60;
+        rawVelocity = state.distance / seconds;
+        vcr = vcrFromTest(rawVelocity);
+        inputText = `${state.distance.toLocaleString("en-US")} m / ${state.minutes} นาที`;
+        formulaText = state.minutes === 30
+          ? `(${state.distance.toLocaleString("en-US")} ÷ ${seconds.toLocaleString("en-US")}) - 0.2 = ${vcr > 0 ? vcr.toFixed(2) : "0.00"} m/sec`
+          : `${state.distance.toLocaleString("en-US")} ÷ ${seconds.toLocaleString("en-US")} = ${vcr > 0 ? vcr.toFixed(2) : "0.00"} m/sec`;
+
+        const range = ranges[state.minutes];
+        outOfReference = state.distance < range.min || state.distance > range.max;
+      }
+
+      if (state.inputMode === "vcr") {
+        const directVcr = Number(refs.vcrInput.value);
+        state.directVcr = Number.isFinite(directVcr) && directVcr > 0 ? directVcr : 0;
+        rawVelocity = state.directVcr;
+        vcr = state.directVcr;
+        inputText = `${state.directVcr ? state.directVcr.toFixed(2) : "0.00"} m/sec`;
+        formulaText = `ใช้ VCR โดยตรง = ${state.directVcr ? state.directVcr.toFixed(2) : "0.00"} m/sec`;
+      }
+
+      if (state.inputMode === "pace") {
+        state.paceText = refs.paceInput.value;
+        const paceSeconds = parsePaceToSeconds(state.paceText);
+        vcr = paceSeconds > 0 ? 1000 / paceSeconds : 0;
+        rawVelocity = vcr;
+        inputText = `${state.paceText || "0:00"} min/km`;
+        formulaText = `VCR = 1000 ÷ ${paceSeconds ? secondsToPace(paceSeconds) : "0:00"} = ${vcr ? vcr.toFixed(2) : "0.00"} m/sec`;
+      }
+
+      const hasVcr = vcr > 0;
+      const basePaceSeconds = hasVcr ? 1000 / vcr : 0;
+      const estimate30 = hasVcr ? estimateDistanceForMinutes(vcr, 30) : 0;
+      const estimate60 = hasVcr ? estimateDistanceForMinutes(vcr, 60) : 0;
+      const displayEstimateMinutes = state.inputMode === "distance" && state.minutes === 60 ? 30 : 60;
+      const displayEstimateDistance = displayEstimateMinutes === 30 ? estimate30 : estimate60;
+
+      refs.warning.classList.toggle("show", outOfReference);
+      refs.vcrValue.textContent = hasVcr ? vcr.toFixed(2) : "0.00";
+      refs.paceValue.textContent = hasVcr ? secondsToPace(basePaceSeconds) : "0:00";
+      refs.equivalentValue.textContent = displayEstimateDistance.toLocaleString("en-US");
+      refs.equivalentLabel.textContent = `m ใน ${displayEstimateMinutes} นาที`;
+      refs.sourceLine.textContent = `คำนวณจาก ${inputText}, velocity ${rawVelocity ? rawVelocity.toFixed(2) : "0.00"} m/sec`;
+      refs.formulaVcr.textContent = formulaText;
+
+      const pace70 = hasVcr ? paceFromVelocity(vcr * 0.70) : "0:00";
+      const pace85 = hasVcr ? paceFromVelocity(vcr * 0.85) : "0:00";
+      const pace90 = hasVcr ? paceFromVelocity(vcr * 0.90) : "0:00";
+      const pace95 = hasVcr ? paceFromVelocity(vcr * 0.95) : "0:00";
+      const pace97 = hasVcr ? paceFromVelocity(vcr * 0.97) : "0:00";
+
+      const fast = secondsToPace(basePaceSeconds - 20);
+      const steady = secondsToPace(basePaceSeconds - 10);
+      const paceOver = hasVcr ? `${fast} - ${steady}` : "0:00 - 0:00";
+
+      refs.pace70.innerHTML = paceCell(pace70);
+      refs.pace85.innerHTML = paceCell(pace85);
+      refs.pace90.innerHTML = paceCell(pace90);
+      refs.pace95.innerHTML = paceCell(pace95);
+      refs.pace97.innerHTML = paceCell(pace97);
+      refs.paceOver.innerHTML = paceCell(paceOver);
+
+      state.latestResult = {
+        input: inputText,
+        vcr: hasVcr ? vcr.toFixed(2) : "0.00",
+        basePace: hasVcr ? secondsToPace(basePaceSeconds) : "0:00",
+        estimate30: estimate30.toLocaleString("en-US"),
+        estimate60: estimate60.toLocaleString("en-US"),
+        zones: [
+          zoneResult("Z1", "70%", pace70, "Run for regeneration", "120-130"),
+          zoneResult("Z2", "85%", pace85, "30-60 min endurance / tempo run", "140-150"),
+          zoneResult("Z3 MP", "90%", pace90, "30-60 min endurance / tempo run", "150-160"),
+          zoneResult("HMP", "95%", pace95, "30-60 min endurance / tempo run", "ยังไม่ระบุ"),
+          zoneResult("Z4", "97%", pace97, "30-60 min endurance / tempo run", "168-170"),
+          zoneResult("Z5", ">100%", paceOver, "Extensive interval", "180-190")
+        ]
+      };
+    }
+
+    refs.modeDistance.addEventListener("click", () => setInputMode("distance"));
+    refs.modeVcr.addEventListener("click", () => setInputMode("vcr"));
+    refs.modePace.addEventListener("click", () => setInputMode("pace"));
+    refs.test30.addEventListener("click", () => setDuration(30));
+    refs.test60.addEventListener("click", () => setDuration(60));
+    refs.copyButton.addEventListener("click", copyTrainingValues);
+    refs.distance.addEventListener("input", calculate);
+    refs.vcrInput.addEventListener("input", calculate);
+    refs.paceInput.addEventListener("input", calculate);
+    refs.distanceRange.addEventListener("input", (event) => {
+      refs.distance.value = event.target.value;
+      calculate();
+    });
+
+    renderQuickValues();
+    calculate();
+  </script>
+</body>
+</html>
