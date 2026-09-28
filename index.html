@@ -515,13 +515,21 @@
           <div class="hint">ใส่ค่า VCR โดยตรง ระบบจะคำนวณ pace และ zones ให้ทันที</div>
         </div>
 
+        <div class="group input-panel" id="paceDurationPanel">
+          <label>เลือกประเภทการทดสอบ pace</label>
+          <div class="segmented" role="tablist" aria-label="Pace test duration">
+            <button id="pace30" class="active" type="button" aria-pressed="true">30 นาที</button>
+            <button id="pace60" type="button" aria-pressed="false">60 นาที</button>
+          </div>
+        </div>
+
         <div class="group input-panel" id="paceInputPanel">
-          <label for="paceInput">Time per km</label>
+          <label for="paceInput">Pace จากการทดสอบ</label>
           <div class="input-wrap">
-            <input id="paceInput" type="text" value="5:57" inputmode="numeric" placeholder="เช่น 5:57">
+            <input id="paceInput" type="text" value="5:33" inputmode="numeric" placeholder="เช่น 5:33">
             <span class="unit">min/km</span>
           </div>
-          <div class="hint">ใส่เป็นนาที:วินาที เช่น 6:40 หรือใส่นาทีแบบทศนิยม เช่น 6.67</div>
+          <div class="hint">ใส่ pace ที่วิ่งจริงในการทดสอบ 30 หรือ 60 นาที เช่น 6:40 หรือ 6.67</div>
         </div>
 
         <div class="group input-panel active" id="quickValuesPanel">
@@ -544,9 +552,9 @@
             <small>m/sec</small>
           </div>
           <div class="metric">
-            <span>Time per km</span>
+            <span>Time per km / Treadmill</span>
             <strong id="paceValue">5:57</strong>
-            <small>min / 1 km</small>
+            <small id="paceDetail">min / 1 km</small>
           </div>
           <div class="metric">
             <span>เทียบผลทดสอบ</span>
@@ -644,7 +652,8 @@
       minutes: 30,
       distance: 5400,
       directVcr: 2.8,
-      paceText: "5:57",
+      paceMinutes: 30,
+      paceText: "5:33",
       latestResult: null
     };
 
@@ -655,10 +664,13 @@
       distancePanel: document.querySelector("#distancePanel"),
       distanceInputPanel: document.querySelector("#distanceInputPanel"),
       vcrInputPanel: document.querySelector("#vcrInputPanel"),
+      paceDurationPanel: document.querySelector("#paceDurationPanel"),
       paceInputPanel: document.querySelector("#paceInputPanel"),
       quickValuesPanel: document.querySelector("#quickValuesPanel"),
       test30: document.querySelector("#test30"),
       test60: document.querySelector("#test60"),
+      pace30: document.querySelector("#pace30"),
+      pace60: document.querySelector("#pace60"),
       distance: document.querySelector("#distance"),
       distanceRange: document.querySelector("#distanceRange"),
       vcrInput: document.querySelector("#vcrInput"),
@@ -670,6 +682,7 @@
       copyStatus: document.querySelector("#copyStatus"),
       vcrValue: document.querySelector("#vcrValue"),
       paceValue: document.querySelector("#paceValue"),
+      paceDetail: document.querySelector("#paceDetail"),
       equivalentValue: document.querySelector("#equivalentValue"),
       equivalentLabel: document.querySelector("#equivalentLabel"),
       sourceLine: document.querySelector("#sourceLine"),
@@ -723,19 +736,32 @@
       return secondsToPace(1000 / velocity);
     }
 
-    function paceCell(value) {
-      return `${value}<span class="label">min/km</span>`;
+    function kphFromVelocity(velocity) {
+      return velocity > 0 ? (velocity * 3.6).toFixed(1) : "0.0";
     }
 
-    function zoneResult(label, percent, pace, method, heartRate) {
-      return { label, percent, pace, method, heartRate };
+    function kphFromPaceSeconds(seconds) {
+      return seconds > 0 ? (3600 / seconds).toFixed(1) : "0.0";
     }
 
-    function vcrFromTest(rawVelocity) {
-      if (state.minutes === 30) {
+    function paceCell(value, kph) {
+      return `${value}<span class="label">min/km</span><span class="label">${kph} KPH</span>`;
+    }
+
+    function zoneResult(label, percent, pace, kph, method, heartRate) {
+      return { label, percent, pace, kph, method, heartRate };
+    }
+
+    function vcrFromTest(rawVelocity, minutes = state.minutes) {
+      if (minutes === 30) {
         return Math.max(0, rawVelocity - 0.2);
       }
       return rawVelocity;
+    }
+
+    function testPaceSecondsFromVcr(vcr, minutes) {
+      const rawVelocity = minutes === 30 ? vcr + 0.2 : vcr;
+      return rawVelocity > 0 ? 1000 / rawVelocity : 0;
     }
 
     function equivalentDistanceFromVcr(vcr) {
@@ -763,11 +789,11 @@
         "",
         `Input: ${result.input}`,
         `VCR สำหรับใช้คำนวณโซน: ${result.vcr} m/sec`,
-        `Time per km: ${result.basePace} min/km`,
+        `Time per km: ${result.basePace} min/km (${result.baseKph} KPH)`,
         `Estimated test: ${result.estimate30} m / 30 นาที, ${result.estimate60} m / 60 นาที`,
         "",
         "Training zones:",
-        ...result.zones.map((zone) => `${zone.percent} (${zone.label}): ${zone.pace} min/km, HR ${zone.heartRate} - ${zone.method}`),
+        ...result.zones.map((zone) => `${zone.percent} (${zone.label}): ${zone.pace} min/km (${zone.kph} KPH), HR ${zone.heartRate} - ${zone.method}`),
         "",
         "ต้องการให้ช่วยทำโปรแกรมซ้อมโดยใช้ pace zones ด้านบน"
       ];
@@ -811,7 +837,7 @@
       }
 
       if (state.latestResult && inputMode === "pace") {
-        refs.paceInput.value = state.latestResult.basePace;
+        refs.paceInput.value = secondsToPace(testPaceSecondsFromVcr(Number(state.latestResult.vcr), state.paceMinutes));
       }
 
       state.inputMode = inputMode;
@@ -826,6 +852,7 @@
       refs.distanceInputPanel.classList.toggle("active", inputMode === "distance");
       refs.quickValuesPanel.classList.toggle("active", inputMode === "distance");
       refs.vcrInputPanel.classList.toggle("active", inputMode === "vcr");
+      refs.paceDurationPanel.classList.toggle("active", inputMode === "pace");
       refs.paceInputPanel.classList.toggle("active", inputMode === "pace");
 
       calculate();
@@ -842,6 +869,15 @@
       refs.test30.setAttribute("aria-pressed", String(minutes === 30));
       refs.test60.setAttribute("aria-pressed", String(minutes === 60));
       renderQuickValues();
+      calculate();
+    }
+
+    function setPaceDuration(minutes) {
+      state.paceMinutes = minutes;
+      refs.pace30.classList.toggle("active", minutes === 30);
+      refs.pace60.classList.toggle("active", minutes === 60);
+      refs.pace30.setAttribute("aria-pressed", String(minutes === 30));
+      refs.pace60.setAttribute("aria-pressed", String(minutes === 60));
       calculate();
     }
 
@@ -897,22 +933,30 @@
       if (state.inputMode === "pace") {
         state.paceText = refs.paceInput.value;
         const paceSeconds = parsePaceToSeconds(state.paceText);
-        vcr = paceSeconds > 0 ? 1000 / paceSeconds : 0;
-        rawVelocity = vcr;
-        inputText = `${state.paceText || "0:00"} min/km`;
-        formulaText = `VCR = 1000 ÷ ${paceSeconds ? secondsToPace(paceSeconds) : "0:00"} = ${vcr ? vcr.toFixed(2) : "0.00"} m/sec`;
+        rawVelocity = paceSeconds > 0 ? 1000 / paceSeconds : 0;
+        vcr = vcrFromTest(rawVelocity, state.paceMinutes);
+        inputText = `${state.paceText || "0:00"} min/km / ${state.paceMinutes} นาที`;
+        formulaText = state.paceMinutes === 30
+          ? `(1000 ÷ ${paceSeconds ? secondsToPace(paceSeconds) : "0:00"}) - 0.2 = ${vcr ? vcr.toFixed(2) : "0.00"} m/sec`
+          : `1000 ÷ ${paceSeconds ? secondsToPace(paceSeconds) : "0:00"} = ${vcr ? vcr.toFixed(2) : "0.00"} m/sec`;
       }
 
       const hasVcr = vcr > 0;
       const basePaceSeconds = hasVcr ? 1000 / vcr : 0;
       const estimate30 = hasVcr ? estimateDistanceForMinutes(vcr, 30) : 0;
       const estimate60 = hasVcr ? estimateDistanceForMinutes(vcr, 60) : 0;
-      const displayEstimateMinutes = state.inputMode === "distance" && state.minutes === 60 ? 30 : 60;
+      const sourceTestMinutes = state.inputMode === "distance"
+        ? state.minutes
+        : state.inputMode === "pace"
+          ? state.paceMinutes
+          : 30;
+      const displayEstimateMinutes = sourceTestMinutes === 60 ? 30 : 60;
       const displayEstimateDistance = displayEstimateMinutes === 30 ? estimate30 : estimate60;
 
       refs.warning.classList.toggle("show", outOfReference);
       refs.vcrValue.textContent = hasVcr ? vcr.toFixed(2) : "0.00";
       refs.paceValue.textContent = hasVcr ? secondsToPace(basePaceSeconds) : "0:00";
+      refs.paceDetail.textContent = `${hasVcr ? kphFromVelocity(vcr) : "0.0"} KPH`;
       refs.equivalentValue.textContent = displayEstimateDistance.toLocaleString("en-US");
       refs.equivalentLabel.textContent = `m ใน ${displayEstimateMinutes} นาที`;
       refs.sourceLine.textContent = `คำนวณจาก ${inputText}, velocity ${rawVelocity ? rawVelocity.toFixed(2) : "0.00"} m/sec`;
@@ -923,31 +967,40 @@
       const pace90 = hasVcr ? paceFromVelocity(vcr * 0.90) : "0:00";
       const pace95 = hasVcr ? paceFromVelocity(vcr * 0.95) : "0:00";
       const pace97 = hasVcr ? paceFromVelocity(vcr * 0.97) : "0:00";
+      const kph70 = hasVcr ? kphFromVelocity(vcr * 0.70) : "0.0";
+      const kph85 = hasVcr ? kphFromVelocity(vcr * 0.85) : "0.0";
+      const kph90 = hasVcr ? kphFromVelocity(vcr * 0.90) : "0.0";
+      const kph95 = hasVcr ? kphFromVelocity(vcr * 0.95) : "0.0";
+      const kph97 = hasVcr ? kphFromVelocity(vcr * 0.97) : "0.0";
 
       const fast = secondsToPace(basePaceSeconds - 20);
       const steady = secondsToPace(basePaceSeconds - 10);
       const paceOver = hasVcr ? `${fast} - ${steady}` : "0:00 - 0:00";
+      const kphOver = hasVcr
+        ? `${kphFromPaceSeconds(basePaceSeconds - 10)} - ${kphFromPaceSeconds(basePaceSeconds - 20)}`
+        : "0.0 - 0.0";
 
-      refs.pace70.innerHTML = paceCell(pace70);
-      refs.pace85.innerHTML = paceCell(pace85);
-      refs.pace90.innerHTML = paceCell(pace90);
-      refs.pace95.innerHTML = paceCell(pace95);
-      refs.pace97.innerHTML = paceCell(pace97);
-      refs.paceOver.innerHTML = paceCell(paceOver);
+      refs.pace70.innerHTML = paceCell(pace70, kph70);
+      refs.pace85.innerHTML = paceCell(pace85, kph85);
+      refs.pace90.innerHTML = paceCell(pace90, kph90);
+      refs.pace95.innerHTML = paceCell(pace95, kph95);
+      refs.pace97.innerHTML = paceCell(pace97, kph97);
+      refs.paceOver.innerHTML = paceCell(paceOver, kphOver);
 
       state.latestResult = {
         input: inputText,
         vcr: hasVcr ? vcr.toFixed(2) : "0.00",
         basePace: hasVcr ? secondsToPace(basePaceSeconds) : "0:00",
+        baseKph: hasVcr ? kphFromVelocity(vcr) : "0.0",
         estimate30: estimate30.toLocaleString("en-US"),
         estimate60: estimate60.toLocaleString("en-US"),
         zones: [
-          zoneResult("Z1", "70%", pace70, "Run for regeneration", "120-130"),
-          zoneResult("Z2", "85%", pace85, "30-60 min endurance / tempo run", "140-150"),
-          zoneResult("Z3 MP", "90%", pace90, "30-60 min endurance / tempo run", "150-160"),
-          zoneResult("HMP", "95%", pace95, "30-60 min endurance / tempo run", "ยังไม่ระบุ"),
-          zoneResult("Z4", "97%", pace97, "30-60 min endurance / tempo run", "168-170"),
-          zoneResult("Z5", ">100%", paceOver, "Extensive interval", "180-190")
+          zoneResult("Z1", "70%", pace70, kph70, "Run for regeneration", "120-130"),
+          zoneResult("Z2", "85%", pace85, kph85, "30-60 min endurance / tempo run", "140-150"),
+          zoneResult("Z3 MP", "90%", pace90, kph90, "30-60 min endurance / tempo run", "150-160"),
+          zoneResult("HMP", "95%", pace95, kph95, "30-60 min endurance / tempo run", "ยังไม่ระบุ"),
+          zoneResult("Z4", "97%", pace97, kph97, "30-60 min endurance / tempo run", "168-170"),
+          zoneResult("Z5", ">100%", paceOver, kphOver, "Extensive interval", "180-190")
         ]
       };
     }
@@ -957,6 +1010,8 @@
     refs.modePace.addEventListener("click", () => setInputMode("pace"));
     refs.test30.addEventListener("click", () => setDuration(30));
     refs.test60.addEventListener("click", () => setDuration(60));
+    refs.pace30.addEventListener("click", () => setPaceDuration(30));
+    refs.pace60.addEventListener("click", () => setPaceDuration(60));
     refs.copyButton.addEventListener("click", copyTrainingValues);
     refs.distance.addEventListener("input", calculate);
     refs.vcrInput.addEventListener("input", calculate);
