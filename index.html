@@ -489,8 +489,9 @@
 
         <div class="group input-panel active" id="distancePanel">
           <label>เลือกประเภทการทดสอบ</label>
-          <div class="segmented" role="tablist" aria-label="Test duration">
+          <div class="segmented three" role="tablist" aria-label="Test duration">
             <button id="test30" class="active" type="button" aria-pressed="true">30 นาที</button>
+            <button id="test30Star" type="button" aria-pressed="false">30 นาที*</button>
             <button id="test60" type="button" aria-pressed="false">60 นาที</button>
           </div>
         </div>
@@ -589,7 +590,7 @@
                   <td colspan="6"></td>
                 </tr>
                 <tr class="zone-row">
-                  <td>30-60 min endurance / tempo run</td>
+                  <td>30-90 min endurance / 30-60 min tempo</td>
                   <td></td>
                   <td id="paceMid">7:40<span class="label">min/km</span></td>
                   <td id="pace85">7:00<span class="label">min/km</span></td>
@@ -616,7 +617,7 @@
               <div class="hr-cell">150-160<span>90% Z3 MP</span></div>
               <div class="hr-cell">ยังไม่ระบุ<span>95% HMP</span></div>
               <div class="hr-cell">168-170<span>97% Z4</span></div>
-              <div class="hr-cell">180-190<span>&gt;100% Z5</span></div>
+              <div class="hr-cell">ไม่ระบุ<span>&gt;100% Z5</span></div>
             </div>
           </div>
         </div>
@@ -624,7 +625,7 @@
         <div class="panel">
           <div class="section-title">
             <span>Formula</span>
-            <small>30 นาทีแปลงเป็น 60 นาทีด้วย -0.2</small>
+            <small id="formulaNote">30 นาทีแปลงเป็น 60 นาทีด้วย -0.2</small>
           </div>
           <div class="formula">
             <div>
@@ -653,6 +654,7 @@
     const state = {
       inputMode: "distance",
       minutes: 30,
+      testType: "30",
       distance: 5400,
       directVcr: 2.8,
       paceMinutes: 30,
@@ -671,6 +673,7 @@
       paceInputPanel: document.querySelector("#paceInputPanel"),
       quickValuesPanel: document.querySelector("#quickValuesPanel"),
       test30: document.querySelector("#test30"),
+      test30Star: document.querySelector("#test30Star"),
       test60: document.querySelector("#test60"),
       pace30: document.querySelector("#pace30"),
       pace60: document.querySelector("#pace60"),
@@ -690,6 +693,7 @@
       equivalentLabel: document.querySelector("#equivalentLabel"),
       sourceLine: document.querySelector("#sourceLine"),
       formulaVcr: document.querySelector("#formulaVcr"),
+      formulaNote: document.querySelector("#formulaNote"),
       pace70: document.querySelector("#pace70"),
       paceMid: document.querySelector("#paceMid"),
       pace85: document.querySelector("#pace85"),
@@ -756,8 +760,8 @@
       return { label, percent, pace, kph, method, heartRate };
     }
 
-    function vcrFromTest(rawVelocity, minutes = state.minutes) {
-      if (minutes === 30) {
+    function vcrFromTest(rawVelocity, minutes = state.minutes, testType = state.testType) {
+      if (minutes === 30 && testType !== "30*") {
         return Math.max(0, rawVelocity - 0.2);
       }
       return rawVelocity;
@@ -862,16 +866,26 @@
       calculate();
     }
 
-    function setDuration(minutes) {
-      state.minutes = minutes;
-      const config = ranges[minutes];
+    function setDuration(testType) {
+      state.testType = testType;
+      state.minutes = testType === "60" ? 60 : 30;
+      const config = ranges[state.minutes];
       refs.distanceRange.min = config.sliderMin;
       refs.distanceRange.max = config.sliderMax;
-      refs.rangeHint.textContent = `ช่วงจากตาราง ${minutes} นาที: ${config.min}-${config.max} m`;
-      refs.test30.classList.toggle("active", minutes === 30);
-      refs.test60.classList.toggle("active", minutes === 60);
-      refs.test30.setAttribute("aria-pressed", String(minutes === 30));
-      refs.test60.setAttribute("aria-pressed", String(minutes === 60));
+      refs.rangeHint.textContent = testType === "30*"
+        ? `อ้างอิงความเร็วจาก 60 นาที (ไม่แปลงค่า): ${config.min}-${config.max} m`
+        : `ช่วงจากตาราง ${state.minutes} นาที: ${config.min}-${config.max} m`;
+      refs.test30.classList.toggle("active", testType === "30");
+      refs.test30Star.classList.toggle("active", testType === "30*");
+      refs.test60.classList.toggle("active", testType === "60");
+      refs.test30.setAttribute("aria-pressed", String(testType === "30"));
+      refs.test30Star.setAttribute("aria-pressed", String(testType === "30*"));
+      refs.test60.setAttribute("aria-pressed", String(testType === "60"));
+      refs.formulaNote.textContent = testType === "30*"
+        ? "30* นาที ไม่แปลงค่า สำหรับ นักกีฬาที่ซ้อมประจำ"
+        : testType === "30"
+          ? "30 นาทีแปลงเป็น 60 นาทีด้วย -0.2"
+          : "60 นาทีใช้ค่า VCR โดยตรง";
       renderQuickValues();
       calculate();
     }
@@ -916,8 +930,9 @@
         const seconds = state.minutes * 60;
         rawVelocity = state.distance / seconds;
         vcr = vcrFromTest(rawVelocity);
-        inputText = `${state.distance.toLocaleString("en-US")} m / ${state.minutes} นาที`;
-        formulaText = state.minutes === 30
+        const testLabel = state.testType === "30*" ? "30*" : state.minutes;
+        inputText = `${state.distance.toLocaleString("en-US")} m / ${testLabel} นาที`;
+        formulaText = state.testType === "30"
           ? `(${state.distance.toLocaleString("en-US")} ÷ ${seconds.toLocaleString("en-US")}) - 0.2 = ${vcr > 0 ? vcr.toFixed(2) : "0.00"} m/sec`
           : `${state.distance.toLocaleString("en-US")} ÷ ${seconds.toLocaleString("en-US")} = ${vcr > 0 ? vcr.toFixed(2) : "0.00"} m/sec`;
 
@@ -938,7 +953,7 @@
         state.paceText = refs.paceInput.value;
         const paceSeconds = parsePaceToSeconds(state.paceText);
         rawVelocity = paceSeconds > 0 ? 1000 / paceSeconds : 0;
-        vcr = vcrFromTest(rawVelocity, state.paceMinutes);
+        vcr = vcrFromTest(rawVelocity, state.paceMinutes, "30");
         inputText = `${state.paceText || "0:00"} min/km / ${state.paceMinutes} นาที`;
         formulaText = state.paceMinutes === 30
           ? `(1000 ÷ ${paceSeconds ? secondsToPace(paceSeconds) : "0:00"}) - 0.2 = ${vcr ? vcr.toFixed(2) : "0.00"} m/sec`
@@ -1003,12 +1018,12 @@
         estimate60: estimate60.toLocaleString("en-US"),
         zones: [
           zoneResult("Z1", "70%", pace70, kph70, "Run for regeneration", "120-130"),
-          zoneResult("Z2 Mid", "77.5%", paceMid, kphMid, "30-60 min endurance / tempo run", "130-140"),
-          zoneResult("Z2", "85%", pace85, kph85, "30-60 min endurance / tempo run", "140-150"),
-          zoneResult("Z3 MP", "90%", pace90, kph90, "30-60 min endurance / tempo run", "150-160"),
-          zoneResult("HMP", "95%", pace95, kph95, "30-60 min endurance / tempo run", "ยังไม่ระบุ"),
-          zoneResult("Z4", "97%", pace97, kph97, "30-60 min endurance / tempo run", "168-170"),
-          zoneResult("Z5", ">100%", paceOver, kphOver, "Extensive interval", "180-190")
+          zoneResult("Z2 Mid", "77.5%", paceMid, kphMid, "30-90 min endurance / 30-60 min tempo", "130-140"),
+          zoneResult("Z2", "85%", pace85, kph85, "30-90 min endurance / 30-60 min tempo", "140-150"),
+          zoneResult("Z3 MP", "90%", pace90, kph90, "30-90 min endurance / 30-60 min tempo", "150-160"),
+          zoneResult("HMP", "95%", pace95, kph95, "30-90 min endurance / 30-60 min tempo", "ยังไม่ระบุ"),
+          zoneResult("Z4", "97%", pace97, kph97, "30-90 min endurance / 30-60 min tempo", "168-170"),
+          zoneResult("Z5", ">100%", paceOver, kphOver, "Extensive interval", "ยังไม่ระบุ")
         ]
       };
     }
@@ -1016,8 +1031,9 @@
     refs.modeDistance.addEventListener("click", () => setInputMode("distance"));
     refs.modeVcr.addEventListener("click", () => setInputMode("vcr"));
     refs.modePace.addEventListener("click", () => setInputMode("pace"));
-    refs.test30.addEventListener("click", () => setDuration(30));
-    refs.test60.addEventListener("click", () => setDuration(60));
+    refs.test30.addEventListener("click", () => setDuration("30"));
+    refs.test30Star.addEventListener("click", () => setDuration("30*"));
+    refs.test60.addEventListener("click", () => setDuration("60"));
     refs.pace30.addEventListener("click", () => setPaceDuration(30));
     refs.pace60.addEventListener("click", () => setPaceDuration(60));
     refs.copyButton.addEventListener("click", copyTrainingValues);
