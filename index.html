@@ -80,6 +80,39 @@
       white-space: nowrap;
     }
 
+    .app-tabs {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      max-width: 540px;
+      margin: 0 0 16px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #edf1f7;
+    }
+
+    .app-tabs button {
+      min-height: 48px;
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font-weight: 900;
+    }
+
+    .app-tabs button.active {
+      background: var(--navy);
+      color: #fff;
+    }
+
+    .app-view {
+      display: none;
+    }
+
+    .app-view.active {
+      display: block;
+    }
+
     .workspace {
       display: grid;
       grid-template-columns: 360px minmax(0, 1fr);
@@ -145,6 +178,10 @@
 
     .input-panel.active {
       display: grid;
+    }
+
+    .is-hidden {
+      display: none !important;
     }
 
     .input-wrap {
@@ -231,6 +268,62 @@
       color: var(--accent);
       font-size: 13px;
       font-weight: 800;
+    }
+
+    .race-distance-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .race-distance-grid button {
+      min-height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: #243047;
+      cursor: pointer;
+      font-weight: 900;
+    }
+
+    .race-distance-grid button.active {
+      border-color: var(--navy);
+      background: var(--navy);
+      color: #fff;
+    }
+
+    .race-table td,
+    .race-table th,
+    .guide-table td,
+    .guide-table th {
+      padding: 12px 10px;
+    }
+
+    .race-table td:first-child,
+    .guide-table td:first-child {
+      text-align: left;
+      color: #26324a;
+    }
+
+    .race-table td:not(:first-child),
+    .guide-table td:not(:first-child) {
+      font-variant-numeric: tabular-nums;
+    }
+
+    .table-scroll {
+      overflow-x: auto;
+    }
+
+    .race-table {
+      min-width: 660px;
+    }
+
+    .guide-table {
+      min-width: 820px;
+    }
+
+    #raceTimePanel input {
+      padding-right: 150px;
     }
 
     .results {
@@ -476,7 +569,13 @@
       <div class="badge">ระยะทางเป็นเมตร</div>
     </header>
 
-    <section class="workspace" aria-label="VCR calculator">
+    <nav class="app-tabs" aria-label="Calculator views">
+      <button id="tabVcr" class="active" type="button" aria-pressed="true">VCR Calculator</button>
+      <button id="tabRace" type="button" aria-pressed="false">Race Pace Finisher</button>
+    </nav>
+
+    <section class="app-view active" id="vcrTabPanel" aria-label="VCR calculator">
+    <section class="workspace">
       <aside class="panel controls">
         <div class="group">
           <label>เลือกวิธีใส่ข้อมูล</label>
@@ -530,7 +629,7 @@
             <input id="paceInput" type="text" value="5:33" inputmode="numeric" placeholder="เช่น 5:33">
             <span class="unit">min/km</span>
           </div>
-          <div class="hint">ใส่ pace ที่วิ่งจริงในการทดสอบ 30 หรือ 60 นาที เช่น 6:40 หรือ 6.67</div>
+          <div class="hint">ใส่ pace ที่วิ่งจริงในการทดสอบ 30 หรือ 60 นาที เช่น 6:40 หรือ 6.40</div>
         </div>
 
         <div class="group input-panel active" id="quickValuesPanel">
@@ -648,6 +747,115 @@
         </div>
       </section>
     </section>
+    </section>
+
+    <section class="app-view" id="raceTabPanel" aria-label="Race Pace Finisher">
+      <section class="workspace">
+        <aside class="panel controls">
+          <div class="group">
+            <label>เลือกวิธีตั้งเป้าหมาย</label>
+            <div class="segmented" role="tablist" aria-label="Race goal input">
+              <button id="raceModeTime" class="active" type="button" aria-pressed="true">เวลาที่จะจบ</button>
+              <button id="raceModePace" type="button" aria-pressed="false">Race Pace</button>
+            </div>
+          </div>
+
+          <div class="group">
+            <label>เลือกระยะเป้าหมาย</label>
+            <div class="race-distance-grid" id="raceDistanceButtons">
+              <button class="active" type="button" data-distance="5000">5K</button>
+              <button type="button" data-distance="10000">10K</button>
+              <button type="button" data-distance="21097.5">21K</button>
+              <button type="button" data-distance="42195">42K</button>
+            </div>
+          </div>
+
+          <div class="group" id="raceTimePanel">
+            <label for="raceTimeInput">เวลาที่ต้องการจบ</label>
+            <div class="input-wrap">
+              <input id="raceTimeInput" type="text" value="25.00" inputmode="numeric" placeholder="เช่น 1.50.00">
+              <span class="unit">mm.ss / hh.mm.ss</span>
+            </div>
+            <div class="hint">ใส่เป็น นาที.วินาที หรือ ชั่วโมง.นาที.วินาที เช่น 25.00, 1.50.00</div>
+          </div>
+
+          <div class="group input-panel" id="racePacePanel">
+            <label for="racePaceInput">Race Pace เป้าหมาย</label>
+            <div class="input-wrap">
+              <input id="racePaceInput" type="text" value="5:00" inputmode="numeric" placeholder="เช่น 5:00">
+              <span class="unit">min/km</span>
+            </div>
+            <div class="hint">ใส่เป็น นาที:วินาที หรือ นาที.วินาที ต่อกิโลเมตร เช่น 6:10 หรือ 6.10</div>
+          </div>
+        </aside>
+
+        <section class="results">
+          <div class="panel summary" aria-label="Race pace summary">
+            <div class="metric">
+              <span>Race Pace</span>
+              <strong id="racePaceValue">5:00</strong>
+              <small>min / km</small>
+            </div>
+            <div class="metric">
+              <span>เวลาจบเป้าหมาย</span>
+              <strong id="raceTimeValue">25:00</strong>
+              <small id="raceSelectedLabel">5K</small>
+            </div>
+            <div class="metric">
+              <span>Treadmill</span>
+              <strong id="raceKphValue">12.0</strong>
+              <small>KPH</small>
+            </div>
+          </div>
+
+          <div class="panel table-panel">
+            <div class="section-title">
+              <span>Race Pace Projection</span>
+              <small id="raceSourceLine">คำนวณจากเวลาเป้าหมาย 25:00 / 5K</small>
+            </div>
+            <div class="table-scroll">
+              <table class="race-table">
+                <thead>
+                  <tr><th>ระยะ</th><th>Race Pace</th><th>เวลาที่คาดว่าจะจบ</th><th>Treadmill</th></tr>
+                </thead>
+                <tbody id="raceProjectionBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="panel table-panel">
+            <div class="section-title">
+              <span>Popular Race Goals</span>
+              <small>เป้าหมายที่นักวิ่งนิยมใช้เป็นหมุดหมาย</small>
+            </div>
+            <div class="table-scroll">
+              <table class="race-table">
+                <thead><tr><th>เป้าหมาย</th><th>ระยะ</th><th>Race Pace</th><th>เวลาจบเป้าหมาย</th></tr></thead>
+                <tbody>
+                  <tr><td>Sub 30</td><td>5K</td><td>6:00 min/km</td><td>0:30:00</td></tr>
+                  <tr><td>Sub 1</td><td>10K</td><td>6:00 min/km</td><td>1:00:00</td></tr>
+                  <tr><td>Sub 2</td><td>21K</td><td>5:41 min/km</td><td>2:00:00</td></tr>
+                  <tr><td>Sub 4</td><td>42K</td><td>5:41 min/km</td><td>4:00:00</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="panel table-panel">
+            <div class="section-title">
+              <span>Standard Pace Guide</span>
+              <small>เวลาโดยประมาณสำหรับใช้ตั้งเป้าหมายเบื้องต้น</small>
+            </div>
+            <div class="table-scroll">
+              <table class="guide-table">
+                <thead><tr id="raceGuideHead"></tr></thead>
+                <tbody id="raceGuideBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </section>
+    </section>
   </main>
 
   <script>
@@ -726,18 +934,22 @@
         return 0;
       }
 
-      if (text.includes(":")) {
-        const [minutesText, secondsText = "0"] = text.split(":");
+      if (text.includes(":") || text.includes(".")) {
+        const parts = text.split(/[.:]/);
+        if (parts.length !== 2) {
+          return 0;
+        }
+        const [minutesText, secondsText] = parts;
         const minutes = Number(minutesText);
         const seconds = Number(secondsText);
-        if (!Number.isFinite(minutes) || !Number.isFinite(seconds)) {
+        if (!Number.isFinite(minutes) || !Number.isFinite(seconds) || minutes < 0 || seconds < 0 || seconds >= 60) {
           return 0;
         }
         return (minutes * 60) + seconds;
       }
 
-      const decimalMinutes = Number(text);
-      return Number.isFinite(decimalMinutes) ? decimalMinutes * 60 : 0;
+      const minutes = Number(text);
+      return Number.isFinite(minutes) && minutes >= 0 ? minutes * 60 : 0;
     }
 
     function paceFromVelocity(velocity) {
@@ -1028,6 +1240,161 @@
       };
     }
 
+    const raceDistances = [
+      { label: "5K", kilometers: 5 },
+      { label: "10K", kilometers: 10 },
+      { label: "21K", kilometers: 21.0975 },
+      { label: "42K", kilometers: 42.195 }
+    ];
+
+    const raceState = {
+      mode: "time",
+      selectedDistance: 5000
+    };
+
+    const raceRefs = {
+      tabVcr: document.querySelector("#tabVcr"),
+      tabRace: document.querySelector("#tabRace"),
+      vcrTabPanel: document.querySelector("#vcrTabPanel"),
+      raceTabPanel: document.querySelector("#raceTabPanel"),
+      modeTime: document.querySelector("#raceModeTime"),
+      modePace: document.querySelector("#raceModePace"),
+      distanceButtons: [...document.querySelectorAll("#raceDistanceButtons button")],
+      timePanel: document.querySelector("#raceTimePanel"),
+      pacePanel: document.querySelector("#racePacePanel"),
+      timeInput: document.querySelector("#raceTimeInput"),
+      paceInput: document.querySelector("#racePaceInput"),
+      paceValue: document.querySelector("#racePaceValue"),
+      timeValue: document.querySelector("#raceTimeValue"),
+      selectedLabel: document.querySelector("#raceSelectedLabel"),
+      kphValue: document.querySelector("#raceKphValue"),
+      sourceLine: document.querySelector("#raceSourceLine"),
+      projectionBody: document.querySelector("#raceProjectionBody"),
+      guideHead: document.querySelector("#raceGuideHead"),
+      guideBody: document.querySelector("#raceGuideBody")
+    };
+
+    function secondsToDuration(seconds) {
+      const rounded = Math.max(0, Math.round(seconds));
+      const hours = Math.floor(rounded / 3600);
+      const minutes = Math.floor((rounded % 3600) / 60);
+      const remainingSeconds = String(rounded % 60).padStart(2, "0");
+      return hours > 0
+        ? `${hours}:${String(minutes).padStart(2, "0")}:${remainingSeconds}`
+        : `${minutes}:${remainingSeconds}`;
+    }
+
+    function parseDurationToSeconds(value) {
+      const text = String(value).trim();
+      if (!text) {
+        return 0;
+      }
+
+      const parts = text.split(/[.:]/).map(Number);
+      if (!parts.length || parts.length > 3 || parts.some((part) => !Number.isFinite(part) || part < 0)) {
+        return 0;
+      }
+
+      if (parts.length === 3) {
+        if (parts[1] >= 60 || parts[2] >= 60) {
+          return 0;
+        }
+        return (parts[0] * 3600) + (parts[1] * 60) + parts[2];
+      }
+      if (parts.length === 2) {
+        if (parts[1] >= 60) {
+          return 0;
+        }
+        return (parts[0] * 60) + parts[1];
+      }
+      return parts.length === 1 ? parts[0] : 0;
+    }
+
+    function getRaceDistance() {
+      return raceDistances.find((distance) => distance.kilometers * 1000 === raceState.selectedDistance) || raceDistances[0];
+    }
+
+    function setAppTab(tab) {
+      const isRace = tab === "race";
+      raceRefs.tabVcr.classList.toggle("active", !isRace);
+      raceRefs.tabRace.classList.toggle("active", isRace);
+      raceRefs.tabVcr.setAttribute("aria-pressed", String(!isRace));
+      raceRefs.tabRace.setAttribute("aria-pressed", String(isRace));
+      raceRefs.vcrTabPanel.classList.toggle("active", !isRace);
+      raceRefs.raceTabPanel.classList.toggle("active", isRace);
+    }
+
+    function setRaceMode(mode) {
+      const selected = getRaceDistance();
+      if (mode === "pace" && raceState.mode === "time") {
+        const timeSeconds = parseDurationToSeconds(raceRefs.timeInput.value);
+        if (timeSeconds > 0) {
+          raceRefs.paceInput.value = secondsToPace(timeSeconds / selected.kilometers);
+        }
+      }
+      if (mode === "time" && raceState.mode === "pace") {
+        const paceSeconds = parsePaceToSeconds(raceRefs.paceInput.value);
+        if (paceSeconds > 0) {
+          raceRefs.timeInput.value = secondsToDuration(paceSeconds * selected.kilometers);
+        }
+      }
+      raceState.mode = mode;
+      const isTime = mode === "time";
+      raceRefs.modeTime.classList.toggle("active", isTime);
+      raceRefs.modePace.classList.toggle("active", !isTime);
+      raceRefs.modeTime.setAttribute("aria-pressed", String(isTime));
+      raceRefs.modePace.setAttribute("aria-pressed", String(!isTime));
+      raceRefs.timePanel.classList.toggle("is-hidden", !isTime);
+      raceRefs.pacePanel.classList.toggle("active", !isTime);
+      calculateRace();
+    }
+
+    function setRaceDistance(distance) {
+      raceState.selectedDistance = Number(distance);
+      raceRefs.distanceButtons.forEach((button) => {
+        button.classList.toggle("active", Number(button.dataset.distance) === raceState.selectedDistance);
+      });
+      calculateRace();
+    }
+
+    function calculateRace() {
+      const selected = getRaceDistance();
+      const timeSeconds = parseDurationToSeconds(raceRefs.timeInput.value);
+      const enteredPaceSeconds = parsePaceToSeconds(raceRefs.paceInput.value);
+      const paceSeconds = raceState.mode === "time"
+        ? timeSeconds / selected.kilometers
+        : enteredPaceSeconds;
+      const selectedFinishSeconds = paceSeconds * selected.kilometers;
+      const isValid = Number.isFinite(paceSeconds) && paceSeconds > 0;
+
+      raceRefs.paceValue.textContent = isValid ? secondsToPace(paceSeconds) : "0:00";
+      raceRefs.timeValue.textContent = isValid ? secondsToDuration(selectedFinishSeconds) : "0:00";
+      raceRefs.selectedLabel.textContent = selected.label;
+      raceRefs.kphValue.textContent = isValid ? (3600 / paceSeconds).toFixed(1) : "0.0";
+      raceRefs.sourceLine.textContent = raceState.mode === "time"
+        ? `คำนวณจากเวลาเป้าหมาย ${raceRefs.timeInput.value || "0:00"} / ${selected.label}`
+        : `คำนวณจาก Race Pace ${raceRefs.paceInput.value || "0:00"} min/km`;
+
+      raceRefs.projectionBody.innerHTML = raceDistances.map((distance) => {
+        const finish = isValid ? secondsToDuration(paceSeconds * distance.kilometers) : "0:00";
+        const pace = isValid ? secondsToPace(paceSeconds) : "0:00";
+        const kph = isValid ? (3600 / paceSeconds).toFixed(1) : "0.0";
+        return `<tr><td>${distance.label}</td><td>${pace} min/km</td><td>${finish}</td><td>${kph} KPH</td></tr>`;
+      }).join("");
+    }
+
+    function renderRaceGuide() {
+      const guidePaces = ["4:00", "4:30", "5:00", "5:30", "6:00", "6:30", "7:00"];
+      raceRefs.guideHead.innerHTML = `<th>ระยะ / Pace</th>${guidePaces.map((pace) => `<th>${pace}</th>`).join("")}`;
+      raceRefs.guideBody.innerHTML = raceDistances.map((distance) => {
+        const cells = guidePaces.map((pace) => {
+          const finish = parsePaceToSeconds(pace) * distance.kilometers;
+          return `<td>${secondsToDuration(finish)}</td>`;
+        }).join("");
+        return `<tr><td>${distance.label}</td>${cells}</tr>`;
+      }).join("");
+    }
+
     refs.modeDistance.addEventListener("click", () => setInputMode("distance"));
     refs.modeVcr.addEventListener("click", () => setInputMode("vcr"));
     refs.modePace.addEventListener("click", () => setInputMode("pace"));
@@ -1045,8 +1412,20 @@
       calculate();
     });
 
+    raceRefs.tabVcr.addEventListener("click", () => setAppTab("vcr"));
+    raceRefs.tabRace.addEventListener("click", () => setAppTab("race"));
+    raceRefs.modeTime.addEventListener("click", () => setRaceMode("time"));
+    raceRefs.modePace.addEventListener("click", () => setRaceMode("pace"));
+    raceRefs.distanceButtons.forEach((button) => {
+      button.addEventListener("click", () => setRaceDistance(button.dataset.distance));
+    });
+    raceRefs.timeInput.addEventListener("input", calculateRace);
+    raceRefs.paceInput.addEventListener("input", calculateRace);
+
     renderQuickValues();
     calculate();
+    renderRaceGuide();
+    calculateRace();
   </script>
 </body>
 </html>
