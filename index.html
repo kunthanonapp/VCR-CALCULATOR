@@ -765,15 +765,15 @@
             <div class="race-distance-grid" id="raceDistanceButtons">
               <button class="active" type="button" data-distance="5000">5K</button>
               <button type="button" data-distance="10000">10K</button>
-              <button type="button" data-distance="21097.5">21K</button>
-              <button type="button" data-distance="42195">42K</button>
+              <button type="button" data-distance="21097.5">21.0975K</button>
+              <button type="button" data-distance="42195">42.195K</button>
             </div>
           </div>
 
           <div class="group" id="raceTimePanel">
             <label for="raceTimeInput">เวลาที่ต้องการจบ</label>
             <div class="input-wrap">
-              <input id="raceTimeInput" type="text" value="25.00" inputmode="numeric" placeholder="เช่น 1.50.00">
+              <input id="raceTimeInput" type="text" value="25.00" inputmode="decimal" placeholder="เช่น 1.50.00">
               <span class="unit">mm.ss / hh.mm.ss</span>
             </div>
             <div class="hint">ใส่เป็น นาที.วินาที หรือ ชั่วโมง.นาที.วินาที เช่น 25.00, 1.50.00</div>
@@ -782,7 +782,7 @@
           <div class="group input-panel" id="racePacePanel">
             <label for="racePaceInput">Race Pace เป้าหมาย</label>
             <div class="input-wrap">
-              <input id="racePaceInput" type="text" value="5:00" inputmode="numeric" placeholder="เช่น 5:00">
+              <input id="racePaceInput" type="text" value="5.00" inputmode="decimal" placeholder="เช่น 5.00">
               <span class="unit">min/km</span>
             </div>
             <div class="hint">ใส่เป็น นาที:วินาที หรือ นาที.วินาที ต่อกิโลเมตร เช่น 6:10 หรือ 6.10</div>
@@ -834,8 +834,8 @@
                 <tbody>
                   <tr><td>Sub 30</td><td>5K</td><td>6:00 min/km</td><td>0:30:00</td></tr>
                   <tr><td>Sub 1</td><td>10K</td><td>6:00 min/km</td><td>1:00:00</td></tr>
-                  <tr><td>Sub 2</td><td>21K</td><td>5:41 min/km</td><td>2:00:00</td></tr>
-                  <tr><td>Sub 4</td><td>42K</td><td>5:41 min/km</td><td>4:00:00</td></tr>
+                  <tr><td>Sub 2</td><td>21.0975K</td><td>5:41 min/km</td><td>2:00:00</td></tr>
+                  <tr><td>Sub 4</td><td>42.195K</td><td>5:41 min/km</td><td>4:00:00</td></tr>
                 </tbody>
               </table>
             </div>
@@ -1243,8 +1243,8 @@
     const raceDistances = [
       { label: "5K", kilometers: 5 },
       { label: "10K", kilometers: 10 },
-      { label: "21K", kilometers: 21.0975 },
-      { label: "42K", kilometers: 42.195 }
+      { label: "21.0975K", kilometers: 21.0975 },
+      { label: "42.195K", kilometers: 42.195 }
     ];
 
     const raceState = {
